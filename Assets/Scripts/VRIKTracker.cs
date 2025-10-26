@@ -17,6 +17,7 @@ public class XRHandKinmatics : MonoBehaviour
     [Header("Offsets (Optional)")]
     [SerializeField] private Vector3 headPositionOffset = Vector3.zero;
     [SerializeField] private Vector3 handPositionOffset = Vector3.zero;
+    [SerializeField] private Vector3 handRotationOffset = new Vector3(90, 0, 0);
 
 
     void Start()
@@ -37,14 +38,14 @@ public class XRHandKinmatics : MonoBehaviour
         if (xrLeftHand != null && leftHandTarget != null)
         {
             leftHandTarget.position = xrLeftHand.position + handPositionOffset;
-            leftHandTarget.rotation = xrLeftHand.rotation;
+            leftHandTarget.rotation = xrLeftHand.rotation * Quaternion.Euler(handRotationOffset);
         }
 
         // Update right hand target
         if (xrRightHand != null && rightHandTarget != null)
         {
             rightHandTarget.position = xrRightHand.position + handPositionOffset;
-            rightHandTarget.rotation = xrRightHand.rotation;
+            rightHandTarget.rotation = xrRightHand.rotation * Quaternion.Euler(handRotationOffset);
         }
     }
 }
