@@ -9,8 +9,15 @@ EditorBuildSettings:
     path: Assets/Scenes/InteractionSetup.unity
     guid: 44cf15b7465f18f4f87f2b12c4361d85
   - enabled: 1
-    path: Assets/Scenes/IKScene.unity
-    guid: b9a23ab13d3dce34196923a85d1753e2
+    path: Assets/Scenes/SampleScene.unity
+    guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 0
+    path: Assets/Scenes/VRScene.unity
+    guid: ef0f4b628bb5e364ea8353e4d2b0be41
+  - enabled: 0
+    path: "Assets/Samples/Meta XR Interaction \u200BSDK/71.0.0/Example Scenes/HandGrabExamples.unity"
+    guid: 39ae0e546b9edc0408d3b11c6a7c2814
   m_configObjects:
+    Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 472123b402bb0c8419cb1f74d4e5fd02, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: dbc452e0ba1241e468d5acb56fa96a7d, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 3de6fee7d9963e54bb194177af541b3d, type: 2}
