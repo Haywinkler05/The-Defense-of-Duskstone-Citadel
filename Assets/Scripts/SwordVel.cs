@@ -39,7 +39,7 @@ public class SwordVel : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        audioSource = gameObject.AddComponent<AudioSouce>();
+        audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.clip = collisionSound;
         
     }
