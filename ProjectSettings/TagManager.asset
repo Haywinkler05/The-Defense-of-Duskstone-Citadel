@@ -28,6 +28,7 @@ TagManager:
   - QDSUITextInputField
   - SamplesInfoPanel
   - QDSUIToggleCheckboxRadio
+  - Sword
   layers:
   - Default
   - TransparentFX
@@ -38,7 +39,7 @@ TagManager:
   - Body
   - Head
   - HiddenMesh
-  - 
+  - Gateway
   - Character
   - MirroredCharacter
   - 
