@@ -7,10 +7,40 @@ public class SwordVel : MonoBehaviour
 
     public GameObject sword;
     public float velocity = 0f;
-    private Vector3 previousPosition= new Vector3(0.0f, 0.0f, 0.0f);
+    private Vector3 previousPosition = new Vector3(0.0f, 0.0f, 0.0f);
+
+    public ParticleSystem particleEffect;
+
+    public AudioClip collisionSound;
+    private AudioSource audioSource;
+
+
+/* 
+    void OnCollisionEnter(Collision col)
+    {
+        // play particle on contact.
+        if (particleEffect != null){
+            // sets particle pos to collision point
+            particleEffect.transform.position = collision.contact[0].point;
+            particleEffect.Play();
+        }
+
+
+        // play sound on enemy collision.
+        if(collision.gameObject.CompareTag("Enemy")){
+            audioSource.Play();
+        }
+        else{
+            // play different sound on other collision(ground, wall, etc.)
+            // audioSource2.Play();
+        }
+    }
+ */
     // Start is called before the first frame update
     void Start()
     {
+        audioSource = gameObject.AddComponent<AudioSouce>();
+        audioSource.clip = collisionSound;
         
     }
 
