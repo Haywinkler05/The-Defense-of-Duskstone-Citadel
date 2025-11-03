@@ -5,25 +5,27 @@ using UnityEngine.AI;
 
 public class WaveManager : MonoBehaviour
 {
-    [Header("Wave Settings")]
+    [Header("⚔️ Wave Settings")]
     public GameObject skeletonPrefab;
-    public Transform[] spawnPoints;           // 🔹 Multiple spawn points
+    public Transform[] spawnPoints;
     public Transform playerTarget;
     public int baseEnemiesPerWave = 3;
-    public int maxWaves = 7;
+    public int totalWaves = 3;          // 🔹 Built around 3 waves
     public float startDelay = 10f;
 
-    [Header("Audio Settings")]
-    public AudioSource battleMusic;           // 🔹 Assign in Inspector
-    public float finalWaveJumpTime = 60f;     // 🔹 Time (in seconds) to jump to
+    [Header("🎵 Audio Settings (Optional)")]
+    public AudioSource battleMusic;
 
-    private int waveCount = 0;
-    private bool spawning = false;
+    // 🔊 EVENT: Triggered when all waves are done
+    public delegate void WaveEvent();
+    public static event WaveEvent OnAllWavesComplete;
+
+    private int currentWave = 0;
     private List<GameObject> activeSkeletons = new List<GameObject>();
+    private bool allWavesStarted = false;
 
     void Start()
     {
-        // Auto-find player if not assigned
         if (playerTarget == null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -40,39 +42,39 @@ public class WaveManager : MonoBehaviour
     {
         yield return new WaitForSeconds(startDelay);
 
-        while (waveCount < maxWaves)
+        if (battleMusic != null && !battleMusic.isPlaying)
+            battleMusic.Play();
+
+        allWavesStarted = true;
+
+        while (currentWave < totalWaves)
         {
-            // If this is the final wave, jump audio before spawning
-            if (waveCount == maxWaves - 1 && battleMusic != null)
-            {
-                Debug.Log("[WaveManager] 🎶 Final wave approaching — jumping music!");
-                if (!battleMusic.isPlaying)
-                    battleMusic.Play();
+            currentWave++;
+            yield return StartCoroutine(SpawnWave(currentWave));
 
-                battleMusic.time = finalWaveJumpTime;
-            }
-
-            yield return StartCoroutine(SpawnWave());
-
-            // Wait until all skeletons from current wave are dead
+            // Wait for all skeletons in this wave to die
             yield return new WaitUntil(() => activeSkeletons.Count == 0);
 
-            waveCount++;
-        }
+            Debug.Log($"[WaveManager] ✅ Wave {currentWave} complete!");
 
-        Debug.Log("[WaveManager] 🏰 All waves complete! The Citadel stands strong!");
+            // If this was the final wave
+            if (currentWave == totalWaves)
+            {
+                Debug.Log("[WaveManager] 🏁 Final wave cleared!");
+                OnAllWavesComplete?.Invoke(); // 🔔 Send event after 3rd wave
+            }
+
+            yield return new WaitForSeconds(2f); // small gap between waves
+        }
     }
 
-    private IEnumerator SpawnWave()
+    private IEnumerator SpawnWave(int waveNumber)
     {
-        spawning = true;
+        int enemiesThisWave = baseEnemiesPerWave * waveNumber;
+        if (waveNumber == totalWaves)
+            enemiesThisWave *= 2; // make final wave big
 
-        // Calculate enemy count (2x if last wave)
-        int enemiesThisWave = baseEnemiesPerWave * (waveCount + 1);
-        if (waveCount == maxWaves - 1)
-            enemiesThisWave *= 2;
-
-        Debug.Log($"[WaveManager] ⚔️ Spawning Wave {waveCount + 1}/{maxWaves} ({enemiesThisWave} skeletons)");
+        Debug.Log($"[WaveManager] ⚔️ Spawning Wave {waveNumber}/{totalWaves} with {enemiesThisWave} skeletons");
 
         for (int i = 0; i < enemiesThisWave; i++)
         {
@@ -81,38 +83,36 @@ public class WaveManager : MonoBehaviour
             Vector3 spawnPos = spawnPoint.position + offset;
 
             GameObject skeleton = Instantiate(skeletonPrefab, spawnPos, spawnPoint.rotation);
-
-            // Track the skeleton
             activeSkeletons.Add(skeleton);
 
-            // Cleanup on death
             SkeletonHit hit = skeleton.GetComponent<SkeletonHit>();
             if (hit == null) hit = skeleton.AddComponent<SkeletonHit>();
             StartCoroutine(RemoveOnDeath(skeleton));
 
-            // Ensure AI movement
-            NavMeshAgent agent = skeleton.GetComponent<NavMeshAgent>();
-            if (agent == null)
-                agent = skeleton.AddComponent<NavMeshAgent>();
-
-            SkeletonFollow follow = skeleton.GetComponent<SkeletonFollow>();
-            if (follow == null)
-                follow = skeleton.AddComponent<SkeletonFollow>();
-
+            NavMeshAgent agent = skeleton.GetComponent<NavMeshAgent>() ?? skeleton.AddComponent<NavMeshAgent>();
+            SkeletonFollow follow = skeleton.GetComponent<SkeletonFollow>() ?? skeleton.AddComponent<SkeletonFollow>();
             follow.target = playerTarget;
 
-            yield return new WaitForSeconds(0.25f); // Small delay between spawns
+            yield return new WaitForSeconds(0.25f);
         }
-
-        spawning = false;
     }
 
     private IEnumerator RemoveOnDeath(GameObject skeleton)
     {
-        // Wait until destroyed by SkeletonHit
+        // Wait until destroyed
         while (skeleton != null)
             yield return null;
 
         activeSkeletons.RemoveAll(s => s == null);
+
+        // Debug message for tracking
+        Debug.Log($"[WaveManager] ☠️ Skeleton destroyed. Remaining: {activeSkeletons.Count}");
+
+        // If no skeletons remain AND we’re in the last wave → trigger victory (failsafe)
+        if (allWavesStarted && currentWave == totalWaves && activeSkeletons.Count == 0)
+        {
+            Debug.Log("[WaveManager] 🏆 Last skeleton of last wave defeated!");
+            OnAllWavesComplete?.Invoke();
+        }
     }
 }
