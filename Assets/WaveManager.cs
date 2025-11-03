@@ -5,13 +5,17 @@ using UnityEngine.AI;
 
 public class WaveManager : MonoBehaviour
 {
-    [Header("⚔️ Wave Settings")]
+    [Header("Wave Settings")]
     public GameObject skeletonPrefab;
     public Transform[] spawnPoints;           // 🔹 Multiple spawn points
     public Transform playerTarget;
     public int baseEnemiesPerWave = 3;
     public int maxWaves = 7;
     public float startDelay = 10f;
+
+    [Header("Audio Settings")]
+    public AudioSource battleMusic;           // 🔹 Assign in Inspector
+    public float finalWaveJumpTime = 60f;     // 🔹 Time (in seconds) to jump to
 
     private int waveCount = 0;
     private bool spawning = false;
@@ -38,6 +42,16 @@ public class WaveManager : MonoBehaviour
 
         while (waveCount < maxWaves)
         {
+            // If this is the final wave, jump audio before spawning
+            if (waveCount == maxWaves - 1 && battleMusic != null)
+            {
+                Debug.Log("[WaveManager] 🎶 Final wave approaching — jumping music!");
+                if (!battleMusic.isPlaying)
+                    battleMusic.Play();
+
+                battleMusic.time = finalWaveJumpTime;
+            }
+
             yield return StartCoroutine(SpawnWave());
 
             // Wait until all skeletons from current wave are dead
@@ -53,10 +67,10 @@ public class WaveManager : MonoBehaviour
     {
         spawning = true;
 
-        // Calculate enemy count (4x if last wave)
+        // Calculate enemy count (2x if last wave)
         int enemiesThisWave = baseEnemiesPerWave * (waveCount + 1);
         if (waveCount == maxWaves - 1)
-            enemiesThisWave *= 4;
+            enemiesThisWave *= 2;
 
         Debug.Log($"[WaveManager] ⚔️ Spawning Wave {waveCount + 1}/{maxWaves} ({enemiesThisWave} skeletons)");
 

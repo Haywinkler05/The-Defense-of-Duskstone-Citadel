@@ -4985,7 +4985,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: 32ac9d49126390949b7ac4ae54562867, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.6
+  m_Volume: 0.4
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -16260,8 +16260,10 @@ MonoBehaviour:
   - {fileID: 934604044}
   playerTarget: {fileID: 4771877612261519241}
   baseEnemiesPerWave: 9
-  maxWaves: 7
-  startDelay: 0
+  maxWaves: 3
+  startDelay: 13
+  battleMusic: {fileID: 293812104}
+  finalWaveJumpTime: 98
 --- !u!1001 &1044993885
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33047,7 +33049,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 1
   m_Interpolate: 0
   m_Constraints: 0
