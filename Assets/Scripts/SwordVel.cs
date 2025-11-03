@@ -15,27 +15,29 @@ public class SwordVel : MonoBehaviour
     private AudioSource audioSource;
 
 
-/* 
-    void OnCollisionEnter(Collision col)
+ 
+    void OnTriggerEnter(Collider collision)
     {
-        // play particle on contact.
-        if (particleEffect != null){
-            // sets particle pos to collision point
-            particleEffect.transform.position = collision.contact[0].point;
-            particleEffect.Play();
-        }
-
-
-        // play sound on enemy collision.
+        Debug.Log("Sword Collided");
+        // play sound and particle on enemy collision
         if(collision.gameObject.CompareTag("Enemy")){
+            Debug.Log("Sword Collided with enemy");
             audioSource.Play();
+/* 
+            if (particleEffect != null)
+            {
+                // play particle
+                ParticleSystem part = Instantiate(particleEffect, sword.transform.position, sword.transform.rotation);
+                Destroy(part, 0.05f);
+            }
+             */
         }
         else{
             // play different sound on other collision(ground, wall, etc.)
             // audioSource2.Play();
         }
     }
- */
+ 
     // Start is called before the first frame update
     void Start()
     {
