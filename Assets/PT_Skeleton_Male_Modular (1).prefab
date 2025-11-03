@@ -1241,7 +1241,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   swordTag: Sword
   deathEffect: {fileID: 0}
-  deathSound: {fileID: 0}
+  deathSound: {fileID: 8300000, guid: 01f3d4d31525c194ea10fcc967a8c06c, type: 3}
+  skeletonRagdoll: {fileID: 3805056837662202486, guid: c330ec69d7ae646479bdb6ee430411cb, type: 3}
 --- !u!195 &6810765672692087635
 NavMeshAgent:
   m_ObjectHideFlags: 0
