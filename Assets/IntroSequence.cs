@@ -3,30 +3,18 @@ using System.Collections;
 
 public class IntroSequence : MonoBehaviour
 {
-    [Header("🎙️ King Dialogue Settings")]
-    public AudioSource kingVoice;          // AudioSource component for the King's voice
-    public AudioClip introClip;            // The intro dialogue clip
+    [Header("King Dialogue Settings")]
+    public AudioSource kingVoice;          // AudioSource for the King's voice
+    public AudioClip introClip;            // The dialogue clip
+    public float dialogueDelay = 2f;       // Delay before the King starts speaking
 
-    [Header("🚪 Door & Wave Settings")]
+    [Header("Door Settings")]
     public Animator doorAnimator;          // Animator controlling the castle doors
-    public GameObject waveManager;         // The object that spawns the skeletons
 
     private bool sequenceStarted = false;
 
     void Start()
     {
-        // Make sure skeleton waves are off at start
-        if (waveManager != null)
-        {
-            waveManager.SetActive(false);
-            Debug.Log("[IntroSequence] Wave manager disabled at start.");
-        }
-        else
-        {
-            Debug.LogWarning("[IntroSequence] Wave manager reference missing!");
-        }
-
-        // Start the cinematic intro sequence
         StartCoroutine(BeginIntro());
     }
 
@@ -43,24 +31,27 @@ public class IntroSequence : MonoBehaviour
             yield break;
         }
 
-        // ---- Play the King's dialogue ----
+        // --- Wait before the King starts speaking ---
+        Debug.Log($"[IntroSequence] Waiting {dialogueDelay:F1}s before dialogue starts...");
+        yield return new WaitForSeconds(dialogueDelay);
+
+        // --- Configure immersive 3D audio ---
         kingVoice.clip = introClip;
-        kingVoice.spatialBlend = 0f; // Force 2D for guaranteed audibility
-        kingVoice.volume = 1f;
+        kingVoice.spatialBlend = 1f;                     // Full 3D sound
+        kingVoice.rolloffMode = AudioRolloffMode.Logarithmic;
+        kingVoice.minDistance = 5f;
+        kingVoice.maxDistance = 40f;
+        kingVoice.dopplerLevel = 0f;
         kingVoice.Play();
 
-        Debug.Log("[IntroSequence] Playing King dialogue: " + introClip.name +
-                  " | Duration: " + kingVoice.clip.length + "s");
+        Debug.Log($"[IntroSequence] Playing 3D King dialogue: {introClip.name} | Duration: {kingVoice.clip.length:F1}s");
 
-        // ---- Wait until the clip finishes completely ----
-        while (kingVoice.isPlaying)
-        {
-            yield return null; // wait each frame until finished
-        }
+        // Wait until the clip finishes
+        yield return new WaitWhile(() => kingVoice.isPlaying);
 
         Debug.Log("[IntroSequence] Dialogue finished. Opening castle gates...");
 
-        // ---- Trigger the Door Animation ----
+        // --- Trigger the Door Animation ---
         if (doorAnimator != null)
         {
             if (doorAnimator.HasParameterOfType("Open", AnimatorControllerParameterType.Trigger))
@@ -78,22 +69,10 @@ public class IntroSequence : MonoBehaviour
             Debug.LogError("[IntroSequence] Door Animator reference missing!");
         }
 
-        // ---- Optional: Wait a few seconds before enabling the waves ----
-        yield return new WaitForSeconds(2.5f);
-
-        // ---- Enable the Skeleton Waves ----
-        if (waveManager != null)
-        {
-            waveManager.SetActive(true);
-            Debug.Log("[IntroSequence] Skeleton waves activated!");
-        }
-
         Debug.Log("[IntroSequence] Intro sequence completed.");
     }
 }
 
-
-// ---- Animator Parameter Helper Extension ----
 public static class AnimatorExtensions
 {
     public static bool HasParameterOfType(this Animator self, string name, AnimatorControllerParameterType type)

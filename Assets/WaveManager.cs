@@ -6,93 +6,99 @@ using UnityEngine.AI;
 public class WaveManager : MonoBehaviour
 {
     [Header("⚔️ Wave Settings")]
-    public GameObject skeletonPrefab;       // Skeleton enemy prefab
-    public Transform spawnPoint;            // Where they spawn (bridge entrance)
-    public Transform playerTarget;          // OVR Rig or player
-    public int baseEnemiesPerWave = 3;      // Wave 1 = 3, Wave 2 = 6, etc.
-    public int maxWaves = 7;                // Total number of waves
-    public float waveInterval = 15f;        // Time between waves
-    public float startDelay = 30f;          // Delay before first wave
+    public GameObject skeletonPrefab;
+    public Transform[] spawnPoints;           // 🔹 Multiple spawn points
+    public Transform playerTarget;
+    public int baseEnemiesPerWave = 3;
+    public int maxWaves = 7;
+    public float startDelay = 10f;
 
     private int waveCount = 0;
-    private bool finished = false;
+    private bool spawning = false;
+    private List<GameObject> activeSkeletons = new List<GameObject>();
 
     void Start()
     {
-        // Auto-assign the player target at runtime if not set in Inspector
+        // Auto-find player if not assigned
         if (playerTarget == null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
             if (playerObj != null)
-            {
                 playerTarget = playerObj.transform;
-                Debug.Log("[WaveManager] Automatically found player target: " + playerTarget.name);
-            }
             else
-            {
-                Debug.LogWarning("[WaveManager] No object with tag 'Player' found! Skeletons won't move.");
-            }
+                Debug.LogWarning("[WaveManager] No Player tagged object found!");
         }
 
-        // Start the timed wave spawner
-        StartCoroutine(WaveSpawner());
+        StartCoroutine(WaveLoop());
     }
 
-    private IEnumerator WaveSpawner()
+    private IEnumerator WaveLoop()
     {
-        // Wait for intro or cutscene before spawning enemies
         yield return new WaitForSeconds(startDelay);
 
-        while (!finished)
+        while (waveCount < maxWaves)
         {
-            SpawnWave();
+            yield return StartCoroutine(SpawnWave());
 
-            if (waveCount >= maxWaves)
-            {
-                finished = true;
-                Debug.Log("[WaveManager] 🏰 All waves complete! The Citadel is safe!");
-                yield break;
-            }
+            // Wait until all skeletons from current wave are dead
+            yield return new WaitUntil(() => activeSkeletons.Count == 0);
 
-            // Wait for the interval before the next wave
-            yield return new WaitForSeconds(waveInterval);
+            waveCount++;
         }
+
+        Debug.Log("[WaveManager] 🏰 All waves complete! The Citadel stands strong!");
     }
 
-    private void SpawnWave()
+    private IEnumerator SpawnWave()
     {
-        waveCount++;
-        int enemiesThisWave = baseEnemiesPerWave * waveCount;
-        Debug.Log($"[WaveManager] Spawning Wave {waveCount}/{maxWaves} ({enemiesThisWave} skeletons)");
+        spawning = true;
+
+        // Calculate enemy count (4x if last wave)
+        int enemiesThisWave = baseEnemiesPerWave * (waveCount + 1);
+        if (waveCount == maxWaves - 1)
+            enemiesThisWave *= 4;
+
+        Debug.Log($"[WaveManager] ⚔️ Spawning Wave {waveCount + 1}/{maxWaves} ({enemiesThisWave} skeletons)");
 
         for (int i = 0; i < enemiesThisWave; i++)
         {
+            Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
             Vector3 offset = new Vector3(Random.Range(-3f, 3f), 0, Random.Range(-3f, 3f));
             Vector3 spawnPos = spawnPoint.position + offset;
 
-            // Create skeleton instance
             GameObject skeleton = Instantiate(skeletonPrefab, spawnPos, spawnPoint.rotation);
 
-            // Ensure NavMeshAgent exists
+            // Track the skeleton
+            activeSkeletons.Add(skeleton);
+
+            // Cleanup on death
+            SkeletonHit hit = skeleton.GetComponent<SkeletonHit>();
+            if (hit == null) hit = skeleton.AddComponent<SkeletonHit>();
+            StartCoroutine(RemoveOnDeath(skeleton));
+
+            // Ensure AI movement
             NavMeshAgent agent = skeleton.GetComponent<NavMeshAgent>();
             if (agent == null)
-            {
                 agent = skeleton.AddComponent<NavMeshAgent>();
-                agent.speed = 2f;
-                agent.acceleration = 8f;
-                agent.angularSpeed = 120f;
-                agent.stoppingDistance = 1.5f;
-            }
 
-            // Add follow script if not present
             SkeletonFollow follow = skeleton.GetComponent<SkeletonFollow>();
             if (follow == null)
                 follow = skeleton.AddComponent<SkeletonFollow>();
 
-            // Assign player target
             follow.target = playerTarget;
 
-            Debug.Log($"[WaveManager] Spawned skeleton {i + 1}/{enemiesThisWave} targeting {playerTarget.name}.");
+            yield return new WaitForSeconds(0.25f); // Small delay between spawns
         }
+
+        spawning = false;
+    }
+
+    private IEnumerator RemoveOnDeath(GameObject skeleton)
+    {
+        // Wait until destroyed by SkeletonHit
+        while (skeleton != null)
+            yield return null;
+
+        activeSkeletons.RemoveAll(s => s == null);
     }
 }
