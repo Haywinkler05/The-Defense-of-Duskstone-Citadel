@@ -5,18 +5,22 @@ using UnityEngine.AI;
 
 public class WaveManager : MonoBehaviour
 {
-    [Header("⚔️ Wave Settings")]
+    [Header("Wave Settings")]
     public GameObject skeletonPrefab;
     public Transform[] spawnPoints;
     public Transform playerTarget;
     public int baseEnemiesPerWave = 3;
-    public int totalWaves = 3;          // 🔹 Built around 3 waves
+    public int totalWaves = 3;          
     public float startDelay = 10f;
 
-    [Header("🎵 Audio Settings (Optional)")]
+    [Header("Wave Timeout Settings")]
+    [Tooltip("If a wave lasts longer than this, all enemies will be destroyed automatically.")]
+    public float waveTimeout = 120f; // 2 minutes default
+
+    [Header("Audio Settings (Optional)")]
     public AudioSource battleMusic;
 
-    // 🔊 EVENT: Triggered when all waves are done
+    // Triggered when all waves are done
     public delegate void WaveEvent();
     public static event WaveEvent OnAllWavesComplete;
 
@@ -52,19 +56,21 @@ public class WaveManager : MonoBehaviour
             currentWave++;
             yield return StartCoroutine(SpawnWave(currentWave));
 
+            // Start the timeout failsafe for this wave
+            StartCoroutine(WaveTimeoutCleanup(currentWave));
+
             // Wait for all skeletons in this wave to die
             yield return new WaitUntil(() => activeSkeletons.Count == 0);
 
-            Debug.Log($"[WaveManager] ✅ Wave {currentWave} complete!");
+            Debug.Log($"[WaveManager] Wave {currentWave} complete!");
 
-            // If this was the final wave
             if (currentWave == totalWaves)
             {
-                Debug.Log("[WaveManager] 🏁 Final wave cleared!");
-                OnAllWavesComplete?.Invoke(); // 🔔 Send event after 3rd wave
+                Debug.Log("[WaveManager] Final wave cleared!");
+                OnAllWavesComplete?.Invoke();
             }
 
-            yield return new WaitForSeconds(2f); // small gap between waves
+            yield return new WaitForSeconds(2f);
         }
     }
 
@@ -99,20 +105,35 @@ public class WaveManager : MonoBehaviour
 
     private IEnumerator RemoveOnDeath(GameObject skeleton)
     {
-        // Wait until destroyed
         while (skeleton != null)
             yield return null;
 
         activeSkeletons.RemoveAll(s => s == null);
-
-        // Debug message for tracking
         Debug.Log($"[WaveManager] ☠️ Skeleton destroyed. Remaining: {activeSkeletons.Count}");
 
-        // If no skeletons remain AND we’re in the last wave → trigger victory (failsafe)
         if (allWavesStarted && currentWave == totalWaves && activeSkeletons.Count == 0)
         {
-            Debug.Log("[WaveManager] 🏆 Last skeleton of last wave defeated!");
+            Debug.Log("[WaveManager] Last skeleton of last wave defeated!");
             OnAllWavesComplete?.Invoke();
+        }
+    }
+
+    // Wave timeout failsafe
+    private IEnumerator WaveTimeoutCleanup(int waveNumber)
+    {
+        yield return new WaitForSeconds(waveTimeout);
+
+        // Only trigger cleanup if we're still on this wave
+        if (currentWave == waveNumber && activeSkeletons.Count > 0)
+        {
+            Debug.LogWarning($"[WaveManager] Wave {waveNumber} exceeded {waveTimeout}s — destroying {activeSkeletons.Count} stuck skeletons!");
+
+            foreach (var skel in activeSkeletons)
+            {
+                if (skel != null) Destroy(skel);
+            }
+
+            activeSkeletons.Clear();
         }
     }
 }

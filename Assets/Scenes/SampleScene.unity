@@ -12348,7 +12348,7 @@ Transform:
   m_GameObject: {fileID: 766173092}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -19.31, y: -5.526, z: 2.76}
+  m_LocalPosition: {x: -16.71, y: -5.526, z: 3.27}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16435,6 +16435,7 @@ MonoBehaviour:
   baseEnemiesPerWave: 7
   totalWaves: 3
   startDelay: 13
+  waveTimeout: 105
   battleMusic: {fileID: 293812104}
 --- !u!1001 &1044993885
 PrefabInstance:
@@ -34499,9 +34500,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94d411381876675478a03e80b8669c7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  delayBeforeMove: 13
+  delayBeforeMove: 14
   moveDuration: 2
-  destroyDelay: 0.5
+  destroyDelay: 1
   moveDirection: {x: 0, y: 0, z: 2}
   destroyAfter: 1
 --- !u!1001 &2146534481
