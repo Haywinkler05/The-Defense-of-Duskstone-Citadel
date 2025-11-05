@@ -5,24 +5,27 @@ using UnityEngine.AI;
 
 public class WaveManager : MonoBehaviour
 {
-    [Header("Wave Settings")]
+    [Header("⚔️ Wave Settings")]
     public GameObject skeletonPrefab;
     public Transform[] spawnPoints;
     public Transform playerTarget;
     public int baseEnemiesPerWave = 3;
-    public int totalWaves = 3;          
+    public int totalWaves = 3;
     public float startDelay = 10f;
 
-    [Header("Wave Timeout Settings")]
+    [Header("🕐 Wave Timeout Settings")]
     [Tooltip("If a wave lasts longer than this, all enemies will be destroyed automatically.")]
     public float waveTimeout = 120f; // 2 minutes default
 
-    [Header("Audio Settings (Optional)")]
+    [Header("🎵 Audio Settings (Optional)")]
     public AudioSource battleMusic;
 
-    // Triggered when all waves are done
+    // 🔊 Triggered when all waves are done
     public delegate void WaveEvent();
     public static event WaveEvent OnAllWavesComplete;
+
+    // 🧟 Tracks global number of active skeletons (used by SkeletonFollow)
+    public static int activeEnemies = 0;
 
     private int currentWave = 0;
     private List<GameObject> activeSkeletons = new List<GameObject>();
@@ -78,7 +81,7 @@ public class WaveManager : MonoBehaviour
     {
         int enemiesThisWave = baseEnemiesPerWave * waveNumber;
         if (waveNumber == totalWaves)
-            enemiesThisWave *= 2; // make final wave big
+            enemiesThisWave *= 2; // make final wave larger
 
         Debug.Log($"[WaveManager] ⚔️ Spawning Wave {waveNumber}/{totalWaves} with {enemiesThisWave} skeletons");
 
@@ -91,6 +94,10 @@ public class WaveManager : MonoBehaviour
             GameObject skeleton = Instantiate(skeletonPrefab, spawnPos, spawnPoint.rotation);
             activeSkeletons.Add(skeleton);
 
+            // Count this new skeleton globally
+            activeEnemies++;
+
+            // Attach and configure scripts
             SkeletonHit hit = skeleton.GetComponent<SkeletonHit>();
             if (hit == null) hit = skeleton.AddComponent<SkeletonHit>();
             StartCoroutine(RemoveOnDeath(skeleton));
@@ -105,12 +112,17 @@ public class WaveManager : MonoBehaviour
 
     private IEnumerator RemoveOnDeath(GameObject skeleton)
     {
+        // Wait until skeleton is destroyed
         while (skeleton != null)
             yield return null;
 
+        // Remove from active list and decrement count
         activeSkeletons.RemoveAll(s => s == null);
-        Debug.Log($"[WaveManager] ☠️ Skeleton destroyed. Remaining: {activeSkeletons.Count}");
+        activeEnemies = Mathf.Max(0, activeEnemies - 1);
 
+        Debug.Log($"[WaveManager] ☠️ Skeleton destroyed. Remaining: {activeSkeletons.Count}, Global: {activeEnemies}");
+
+        // If this was the last skeleton of the final wave, trigger final logic
         if (allWavesStarted && currentWave == totalWaves && activeSkeletons.Count == 0)
         {
             Debug.Log("[WaveManager] Last skeleton of last wave defeated!");
@@ -134,6 +146,7 @@ public class WaveManager : MonoBehaviour
             }
 
             activeSkeletons.Clear();
+            activeEnemies = 0;
         }
     }
 }
